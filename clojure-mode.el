@@ -91,6 +91,11 @@ restart (ie. M-x clojure-mode) of existing clojure mode buffers."
   :type 'integer
   :group 'clojure-mode)
 
+(defcustom clojure-mode-cleanup-whitespace nil
+  "Non-nil to invoke `delete-trailing-whitespace' before saves."
+  :type 'boolean
+  :group 'clojure-mode)
+
 (defvar clojure-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map lisp-mode-shared-map)
@@ -143,6 +148,7 @@ if that value is non-nil."
   (set (make-local-variable 'lisp-doc-string-elt-property)
 	   'clojure-doc-string-elt)
   (set (make-local-variable 'font-lock-multiline) t)
+  (set (make-local-variable 'before-save-hook) #'clojure-mode-before-save)
 
   (setq lisp-imenu-generic-expression
         `((nil ,clojure-def-regexp 2)))
@@ -179,6 +185,17 @@ if that value is non-nil."
 
 ;; (define-key clojure-mode-map "{" 'self-insert-command)
 ;; (define-key clojure-mode-map "}" 'self-insert-command)
+
+(defun clojure-mode-before-save ()
+  "Clean up whitespace before saving file.
+You can disable this by customizing `clojure-mode-cleanup-whitespace'."
+  (when clojure-mode-cleanup-whitespace
+    (let ((col (current-column)))
+      (delete-trailing-whitespace)
+      ;; don't change trailing whitespace on current line
+      (unless (eq (current-column) col)
+        (indent-to col)))))
+
 
 (defun clojure-font-lock-def-at-point (point)
   "Find the position range between the top-most def* and the
